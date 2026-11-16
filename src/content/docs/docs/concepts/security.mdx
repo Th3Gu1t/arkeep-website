@@ -51,8 +51,8 @@ root unless you need full-system backups.
 
 ## Credentials at rest
 
-Repository passwords, S3 keys, SFTP passwords, OIDC client secrets, the SMTP password and the webhook
-secret are encrypted at rest with AES-256-GCM using `ARKEEP_SECRET_KEY`. They are write-only: the API
+Repository passwords, S3 keys, SFTP passwords, OIDC client secrets, the SMTP password, the webhook
+secret and the secrets of notification providers (tokens, passwords, topics, webhook URLs) are encrypted at rest with AES-256-GCM using `ARKEEP_SECRET_KEY`. They are write-only: the API
 never returns them.
 
 **What this protects against:** someone who obtains the database alone, such as a dump, a copy of the
@@ -104,7 +104,7 @@ Public endpoints are rate limited per client IP (read from `X-Forwarded-For` onl
 [trusted proxies](/docs/installation/reverse-proxy-tls/#the-web-interface-over-https)), per minute: 5 for
 login and the password reset request and confirmation together, 30 for token refresh, 10 each for the
 2FA step and the required password change, 20 for logout and 5 for the first-admin setup. Sending a test
-email or test webhook is limited to 5 per minute.
+email, test webhook or test notification is limited to 5 per minute.
 
 ## Two-factor authentication
 
