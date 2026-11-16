@@ -9,7 +9,7 @@ Every option can be set with a flag or an environment variable. When both are se
 |---|---|---|---|
 | `--server-addr` | `ARKEEP_SERVER_ADDR` | `localhost:9090` | Server gRPC address, as `host:port` with no scheme |
 | `--agent-secret` | `ARKEEP_AGENT_SECRET` | | Shared secret; must match the server's |
-| `--state-dir` | `ARKEEP_STATE_DIR` | `~/.arkeep` | Agent state, certificates and the extracted restic and rclone binaries |
+| `--state-dir` | `ARKEEP_STATE_DIR` | `~/.arkeep` | Agent state, certificates, the extracted restic and rclone binaries and the [restic cache](#restic-cache) |
 | `--server-http-addr` | `ARKEEP_SERVER_HTTP_ADDR` | `--server-addr` host, port 8080, plain HTTP | Base URL of the server's HTTP API, used once for enrollment. **Required when the server is behind a TLS-terminating reverse proxy**, for example `https://arkeep.example.com`. |
 | `--grpc-tls-ca` | `ARKEEP_GRPC_TLS_CA` | | CA certificate for gRPC TLS, only when the server uses its own certificate signed by a CA the system does not trust |
 | `--grpc-insecure` | `ARKEEP_GRPC_INSECURE` | `false` | Disable TLS for gRPC. Same machine or trusted private network only. |
@@ -32,6 +32,21 @@ Over plain HTTP the agent secret travels in clear and the CA certificate cannot 
 
 The agent binary embeds restic and rclone and extracts them into `--state-dir` at startup. Nothing else needs
 to be installed on the machine, except the tools your [command sources](/docs/guides/databases/) and hooks call.
+
+## Restic cache
+
+restic keeps a local copy of each repository's metadata (index, snapshot list, directory trees), so that a
+backup, a retention run or a snapshot browse does not download it again from the destination. The agent keeps
+this cache in `<state-dir>/cache`. In Docker, the state directory is a volume, so the cache survives image
+updates and container recreates.
+
+The cache holds metadata only, not file contents: it speeds up remote destinations, especially over slow or
+high-latency links, but restores still read file data from the destination. Its size grows with the number of
+files and snapshots, from a few megabytes to a few gigabytes. Retention runs delete the cache of a repository
+the agent has not used for 30 days.
+
+To keep the cache elsewhere, for example on a faster disk, set `RESTIC_CACHE_DIR` (or `XDG_CACHE_HOME`) in the
+agent's environment: the agent then leaves the location to restic.
 
 ## Permissions
 
