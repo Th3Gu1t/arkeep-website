@@ -97,6 +97,12 @@ Rclone destinations take no credentials in Arkeep: configure the remote, with it
 `rclone.conf` on each agent that writes to it. The remote name accepts letters, digits, `_ . + @`,
 spaces and dashes; it cannot be an rclone connection string.
 
+Where the agent reads `rclone.conf`:
+
+- **systemd:** `/root/.config/rclone/rclone.conf` (see [Agent with systemd](/docs/installation/agent-systemd/)).
+- **Docker:** `/etc/arkeep/rclone/rclone.conf` inside the container: mount the host folder there (see
+  [Rclone destinations in Docker](/docs/installation/docker-compose/#rclone-destinations-in-docker)).
+
 ## Credentials
 
 Credentials are encrypted at rest and never shown again after saving. When you edit a destination, leave

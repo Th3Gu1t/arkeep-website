@@ -83,6 +83,35 @@ If you mount the host filesystem at a path other than `/hostfs`, set `ARKEEP_DOC
 For binary, systemd, and Helm deployments leave it unset: paths are used as-is.
 :::
 
+## Rclone destinations in Docker
+
+[Rclone destinations](/docs/guides/destinations/#rclone) use remotes defined in `rclone.conf` on the
+agent, and the file on the host is not visible inside the container. The agent image reads it from
+`/etc/arkeep/rclone/rclone.conf` (set by `RCLONE_CONFIG`), so mount the host folder that holds it:
+
+```yaml
+volumes:
+  - /root/.config/rclone:/etc/arkeep/rclone:rw
+```
+
+- **Mount the folder, not the file.** rclone saves refreshed OAuth tokens (Google Drive, OneDrive,
+  Dropbox) by writing a new file and renaming it over the old one, which fails on a single-file bind
+  mount.
+- **Keep `:rw`.** With `:ro` refreshed tokens are not saved, and providers that rotate refresh tokens
+  can stop accepting the stored one.
+- **Paths in `rclone.conf` are container paths.** A `local` or `alias` remote pointing at
+  `/mnt/backup` must point at a path mounted in the container, with its own `:rw` mount since
+  `/hostfs` is read-only.
+- **With `PUID` set**, the folder and `rclone.conf` must be readable and writable by that UID.
+
+If a backup fails with `rclone remote "…" is not defined in /etc/arkeep/rclone/rclone.conf`, the
+mount is missing or the remote name does not match a section of the file.
+
+:::note
+Agent images up to v0.11 do not set `RCLONE_CONFIG`: mount the folder at `/root/.config/rclone`
+instead (`/home/arkeep/.config/rclone` when `PUID` is set).
+:::
+
 ## Restore in Docker
 
 **Restore to a custom path** works out of the box: enter any host path in the UI (for example `C:\Users\you\Downloads\restore`) and the agent writes the files there via the hostfs mount.
