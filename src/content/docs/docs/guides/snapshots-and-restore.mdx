@@ -6,8 +6,23 @@ description: Browse snapshots, download files or folders, and restore to a custo
 The **Snapshots** page lists the restore points created by completed backups, plus snapshots
 [imported](/docs/guides/importing-and-sync/) from existing repositories.
 
-Filter by **Policy** or **Destination**. Columns: **Policy**, **Destination**, **Snapshot ID**, **Added**
-(data added by that snapshot) and **Created**.
+Filter by **Policy** or **Destination**. Columns: **Policy**, **Destination**, **Snapshot ID**, **Size**
+(size of the files the backup read), **Added** (data the snapshot added to the repository, after
+deduplication and compression) and **Created**.
+
+## Snapshot details
+
+**Details** in a snapshot's menu shows what restic recorded when the backup ran, for every user:
+
+- **Backup**: when it started and how long it took.
+- **Data**: the size of the files read (**Processed**), what the snapshot added to the repository after
+  deduplication (**Added**) and what that takes on the storage after compression (**Stored (compressed)**).
+- **Files**: how many files the backup read, and how many of them were new, changed or unmodified since the
+  previous snapshot.
+
+Snapshots made before Arkeep recorded these details get them at the next
+[snapshot sync](/docs/guides/importing-and-sync/#sync-snapshots) of their destination, which reads them from
+the repository. Snapshots made with restic older than 0.17 have none: they show only the stored size.
 
 ## Browse
 
