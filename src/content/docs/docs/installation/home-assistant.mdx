@@ -1,0 +1,145 @@
+---
+title: Run the agent on Home Assistant
+description: Install the Arkeep agent as a Home Assistant app and copy Home Assistant backups off the machine.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Home Assistant OS gives no access to Docker and usually no shell, so neither
+[Docker Compose](/docs/installation/docker-compose/#agent-only) nor [systemd](/docs/installation/agent-systemd/)
+applies there. The agent is published as a Home Assistant **app** instead (apps were called add-ons before
+Home Assistant 2026.2). The app runs the official `ghcr.io/arkeep-io/arkeep-agent` image of the matching
+Arkeep release.
+
+Home Assistant creates its own backups but leaves them on the machine. With the agent installed, those
+backups become a source of an Arkeep policy like any other, with the same destinations, retention,
+notifications and restores.
+
+Apps need Home Assistant OS. On Home Assistant Container, run the agent with
+[Docker Compose](/docs/installation/docker-compose/#agent-only) next to it.
+
+## Before you start
+
+You need a running Arkeep server that Home Assistant can reach, and two values from it:
+
+- the address of its gRPC endpoint, `host:port` (port 9090 by default);
+- its agent secret, the `ARKEEP_AGENT_SECRET` set on the server.
+
+The agent only makes outbound connections to the server. It needs no open port on Home Assistant.
+
+## Install
+
+<Steps>
+
+1. In Home Assistant, go to **Settings** > **Apps** and select **Install app**.
+
+2. In the top-right menu, select **Repositories** and add:
+
+   ```text
+   https://github.com/arkeep-io/arkeep#home-assistant
+   ```
+
+3. Install **Arkeep Agent** from the list.
+
+4. In the **Configuration** tab, fill in **Server gRPC address** and **Agent secret**. If the server is
+   behind a reverse proxy, also set **Server HTTP URL** (see [Options](#options)).
+
+5. Start the app and open the **Log** tab. The agent reports `enrollment successful`, then
+   `registered with server`.
+
+6. In Arkeep, the agent appears on the **Agents** page, named after the **Hostname** option
+   (`homeassistant` by default).
+
+</Steps>
+
+The app is marked **experimental** in the Home Assistant app store for its first releases.
+
+## Options
+
+The options are the agent's own [environment variables](/docs/reference/agent-config/), shown with
+readable labels.
+
+| Option | Variable | Required | Description |
+|---|---|---|---|
+| Server gRPC address | `ARKEEP_SERVER_ADDR` | yes | `host:port` of the server's gRPC endpoint, without `https://`. Example: `arkeep.example.com:9090`. |
+| Agent secret | `ARKEEP_AGENT_SECRET` | yes | The server's `ARKEEP_AGENT_SECRET`. |
+| Server HTTP URL | `ARKEEP_SERVER_HTTP_ADDR` | no | URL of the server's HTTP API, used once to enroll the agent. By default, the gRPC host on port 8080 over plain HTTP. Set it when the server is behind a [reverse proxy](/docs/installation/reverse-proxy-tls/), for example `https://arkeep.example.com`. |
+| Hostname | `ARKEEP_AGENT_HOSTNAME` | yes | Name of the agent in Arkeep, also recorded on every snapshot. Keep it stable: snapshots are grouped by hostname. With several Home Assistant installations, give each one its own. |
+| CA certificate | `ARKEEP_GRPC_TLS_CA` | no | Path of a CA certificate, under `/ssl`, when the server's gRPC certificate comes from a private CA. Not needed with the certificate Arkeep generates itself. |
+| Log level | `ARKEEP_LOG_LEVEL` | yes | `debug`, `info`, `warn` or `error`. |
+
+:::caution
+Enrolling over plain HTTP sends the agent secret in clear text. Outside a trusted local network, set an
+`https://` **Server HTTP URL**.
+:::
+
+Restart the app after changing an option.
+
+## What the agent can back up
+
+The app sees only the Home Assistant folders below, not the rest of the host. Use these paths as policy
+sources and as restore targets:
+
+| Path | Content | Access |
+|---|---|---|
+| `/backup` | Home Assistant backups | read and write |
+| `/share` | The `share` folder | read and write |
+| `/media` | The `media` folder | read and write |
+| `/homeassistant` | Home Assistant configuration | read only |
+| `/app_configs` | Configuration folders of the installed apps | read only |
+| `/ssl` | Certificates | read only |
+
+Network storage added to Home Assistant with the usage **Share** or **Media** appears under
+`/share/<name>` or `/media/<name>`.
+
+### Recommended policy
+
+Home Assistant backups are the supported way to restore a Home Assistant system: they contain the
+configuration, the database and the data of every app, in a consistent state. Let Home Assistant create
+them, and let Arkeep keep copies elsewhere:
+
+<Steps>
+
+1. In Home Assistant, turn on automatic backups (**Settings** > **System** > **Backups**).
+
+2. In Arkeep, create a [policy](/docs/guides/policies/) for this agent with `/backup` as its source,
+   scheduled after the Home Assistant backup, to a [destination](/docs/guides/destinations/) outside
+   this machine.
+
+</Steps>
+
+Backing up `/homeassistant` directly gives a file-level history of the configuration. The database files
+in it change while Home Assistant runs, so do not rely on that copy of them.
+
+A local destination must be under `/share` or `/media`, and outside the folders the policy backs up.
+
+## Restore
+
+To get a lost Home Assistant backup back, [restore it](/docs/guides/snapshots-and-restore/) to its
+**Original location**. The file is then back in the Home Assistant backup folder, where Home Assistant can
+restore it.
+
+`/homeassistant`, `/app_configs` and `/ssl` are read only. To restore files from them, restore to a folder
+under `/share` and copy them from there.
+
+On a new Home Assistant installation, install the app again and give it the same **Hostname**. It enrolls
+as a new agent, which can restore the snapshots of the previous one from the same destination. The
+previous agent stays on the **Agents** page, offline, until you delete it.
+
+## Upgrade
+
+Each stable Arkeep release publishes a new version of the app. Home Assistant offers it as an update, like
+any other app, and the app then runs the agent of that release. Pre-releases are not published to Home
+Assistant.
+
+## Limits
+
+- **No Docker volumes.** The app has no access to Docker, so [Docker volume](/docs/guides/docker-volumes/)
+  sources and hooks that run `docker` commands do not work.
+- **Only the paths above.** The app does not see the rest of the host.
+- **Hooks run inside the app.** Hooks and command sources run as root inside the app, with the access
+  listed above.
+
+The app keeps the agent's certificate and state in its own data folder, which Home Assistant backups
+include. Without that data, for instance after uninstalling the app, the agent enrolls again as a new
+agent.

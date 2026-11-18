@@ -49,6 +49,7 @@ export default defineConfig({
             { label: 'Standalone binary', slug: 'docs/installation/binary' },
             { label: 'Kubernetes (Helm)', slug: 'docs/installation/kubernetes' },
             { label: 'Agent via systemd', slug: 'docs/installation/agent-systemd' },
+            { label: 'Agent on Home Assistant', slug: 'docs/installation/home-assistant' },
             { label: 'Reverse proxy and TLS', slug: 'docs/installation/reverse-proxy-tls' },
             { label: 'Upgrading', slug: 'docs/installation/upgrading' },
             { label: 'Backing up Arkeep itself', slug: 'docs/installation/backing-up-arkeep' },

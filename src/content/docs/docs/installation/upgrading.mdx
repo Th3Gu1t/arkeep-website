@@ -1,6 +1,6 @@
 ---
 title: Upgrading
-description: Upgrade the server and agents safely, for Docker Compose, binaries and Helm.
+description: Upgrade the server and agents safely, for Docker Compose, binaries, Helm and Home Assistant.
 ---
 
 :::caution
@@ -54,6 +54,11 @@ Upgrade to the chart of the new release (its version is the release without the 
 helm upgrade arkeep oci://ghcr.io/arkeep-io/charts/arkeep --version X.Y.Z --reuse-values
 kubectl rollout status deployment/arkeep
 ```
+
+## Home Assistant app
+
+Home Assistant offers each stable release of the [agent app](/docs/installation/home-assistant/) as an
+update. Install it from **Settings** > **Apps**, or turn on automatic updates for the app.
 
 ## Update notifications
 
