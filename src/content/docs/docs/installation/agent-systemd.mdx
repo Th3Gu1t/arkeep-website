@@ -14,6 +14,15 @@ The repository at `https://pkg.arkeep.io` serves the agent for `amd64`, `arm64` 
 example a Raspberry Pi running a 32-bit system), signed with the Arkeep package key. It holds the last
 three stable releases.
 
+The fingerprint of the Arkeep package key, `Arkeep packages <hello@arkeep.io>`, is:
+
+```text
+76DB 37AC 972E 9076 379C  7984 873A 0E6A 1330 6921
+```
+
+Check it against the key you download (`gpg --show-keys /etc/apt/keyrings/arkeep.asc`), and against the
+one `dnf` shows when it asks you to accept the key.
+
 Debian and Ubuntu:
 
 ```bash
