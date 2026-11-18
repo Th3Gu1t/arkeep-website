@@ -1,6 +1,6 @@
 ---
 title: Upgrading
-description: Upgrade the server and agents safely, for Docker Compose, binaries, Helm and Home Assistant.
+description: Upgrade the server and agents safely, for Docker Compose, binaries, packages, Helm and Home Assistant.
 ---
 
 :::caution
@@ -45,6 +45,22 @@ sudo cp arkeep-server-new /usr/local/bin/arkeep-server
 sudo systemctl start arkeep-server
 sudo journalctl -u arkeep-server -f
 ```
+
+## Agent packages
+
+Install the [package](/docs/installation/agent-systemd/#install-a-package) of the new release over the
+installed one:
+
+```bash
+curl -LO https://github.com/arkeep-io/arkeep/releases/latest/download/arkeep-agent_linux_amd64.deb
+sudo apt install ./arkeep-agent_linux_amd64.deb
+# or, on Fedora and RHEL:
+curl -LO https://github.com/arkeep-io/arkeep/releases/latest/download/arkeep-agent_linux_amd64.rpm
+sudo dnf install ./arkeep-agent_linux_amd64.rpm
+```
+
+`/etc/arkeep/agent.env` is kept and a running agent is restarted on the new version. A service you
+disabled stays disabled.
 
 ## Helm
 
