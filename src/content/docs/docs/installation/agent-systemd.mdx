@@ -4,13 +4,40 @@ description: Install the Arkeep agent as a systemd service, from a .deb or .rpm 
 ---
 
 On Linux, the agent runs as a systemd service. On Debian, Ubuntu, Fedora, RHEL and their derivatives,
-install the package: it sets up the service for you, and upgrades keep your configuration. On other
-distributions, or to manage the binary yourself, [install it by hand](#install-by-hand).
+install the package from the Arkeep repository: it sets up the service for you, and the agent then
+upgrades with the rest of the system. On other distributions, or to manage the binary yourself,
+[install it by hand](#install-by-hand).
 
-## Install a package
+## Install from the package repository
 
-Packages are published with every release for `amd64`, `arm64` and `arm` (armv7, for example a
-Raspberry Pi running a 32-bit system). Pick the file for your architecture (`uname -m` prints
+The repository at `https://pkg.arkeep.io` serves the agent for `amd64`, `arm64` and `armhf` (armv7, for
+example a Raspberry Pi running a 32-bit system), signed with the Arkeep package key. It holds the last
+three stable releases.
+
+Debian and Ubuntu:
+
+```bash
+sudo install -d -m 0755 /etc/apt/keyrings
+curl -fsSL https://pkg.arkeep.io/gpg.key | sudo tee /etc/apt/keyrings/arkeep.asc > /dev/null
+echo "deb [signed-by=/etc/apt/keyrings/arkeep.asc] https://pkg.arkeep.io/apt stable main" \
+  | sudo tee /etc/apt/sources.list.d/arkeep.list
+sudo apt update
+sudo apt install arkeep-agent
+```
+
+Fedora, RHEL and derivatives (`dnf` asks you to accept the Arkeep key on the first install):
+
+```bash
+sudo curl -fsSL -o /etc/yum.repos.d/arkeep.repo https://pkg.arkeep.io/rpm/arkeep.repo
+sudo dnf install arkeep-agent
+```
+
+Then [configure and start the agent](#configure-and-start).
+
+## Install a downloaded package
+
+Without the repository, download the package of a release and install it. Packages are attached to
+every release for `amd64`, `arm64` and `arm`. Pick the file for your architecture (`uname -m` prints
 `x86_64`, `aarch64` or `armv7l`).
 
 Debian and Ubuntu:
@@ -26,6 +53,10 @@ Fedora, RHEL and derivatives:
 curl -LO https://github.com/arkeep-io/arkeep/releases/latest/download/arkeep-agent_linux_amd64.rpm
 sudo dnf install ./arkeep-agent_linux_amd64.rpm
 ```
+
+Upgrades then mean downloading the package of each new release the same way.
+
+## Configure and start
 
 The package installs the agent in `/usr/bin`, the systemd service, and a configuration file,
 `/etc/arkeep/agent.env`, readable by root only. The service is enabled but not started: fill in the
@@ -44,8 +75,8 @@ The agent reports `enrollment successful`, then `registered with server`, and ap
 **Agents** page. Behind a reverse proxy, also set `ARKEEP_SERVER_HTTP_ADDR` in the same file: see
 [Agent configuration](/docs/reference/agent-config/).
 
-To [upgrade](/docs/installation/upgrading/#agent-packages), install the package of the new release the
-same way. Your `agent.env` is kept and a running service is restarted.
+With the repository, the agent [upgrades](/docs/installation/upgrading/#agent-packages) with
+`apt upgrade` or `dnf upgrade`. Your `agent.env` is kept and a running service is restarted.
 
 To remove the agent, run `sudo apt remove arkeep-agent` or `sudo dnf remove arkeep-agent`. Its
 configuration and its state in `/var/lib/arkeep-agent` stay on the machine: installing the package again
@@ -113,8 +144,8 @@ Any other agent setting can go in `/etc/arkeep/agent.env`, for example `ARKEEP_L
 In addition to `linux_amd64` and `linux_arm64`, the agent is also published for `linux_arm`
 (armv7, for example Raspberry Pi and similar single-board computers), `linux_mips`, and `linux_mipsle`.
 This is useful for backing up embedded systems such as DVB-S2 satellite receivers. On armv7 boards
-running Debian, Raspberry Pi OS or Fedora, [install the package](#install-a-package)
-(`arkeep-agent_linux_arm.deb` or `.rpm`). MIPS devices have no package: download the binary and
+running Debian, Raspberry Pi OS or Fedora, [install the package](#install-from-the-package-repository).
+MIPS devices have no package: download the binary and
 [install it by hand](#install-by-hand).
 
 ```bash
