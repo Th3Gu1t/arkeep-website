@@ -50,7 +50,7 @@ Set up the mail server in **Settings → SMTP**:
 | **Host** | Required |
 | **Port** | For example 587 |
 | **Implicit TLS** | On for SMTPS on port 465; off for STARTTLS (587) or plaintext |
-| **Authentication** | Turn on to enter **Username** and **Password**. Leave the password blank to keep the current one. |
+| **Authentication** | Turn on to enter **Username** and **Password**. Leave the password blank to keep the current one, unless you change the host: a new host needs the password again. |
 | **From Address** | Required |
 | **From Name** | `Arkeep` by default |
 | **Notification Recipients** | Addresses to notify. When empty, every active admin is notified. Not used when **Send email notifications** is off. |
@@ -143,7 +143,9 @@ A server URL without a scheme means `https://`; an `http://` URL turns TLS off. 
 reverse proxy, include the base path (`https://example.com/gotify`).
 
 Tokens, passwords, topics and webhook URLs are encrypted at rest and never shown again: when you edit a
-provider, leave them blank to keep the current values. To drop the optional ntfy access token, click
+provider, leave them blank to keep the current values. For Gotify, ntfy and Matrix they are kept only while
+the server in **URL** stays the same: pointing it at another host needs them again, so that saved secrets
+are never sent to another server. To drop the optional ntfy access token, click
 **Remove the saved access token**.
 
 ### Priority per event
@@ -164,7 +166,7 @@ The **Other** type accepts a priority only for services that have one.
 
 **Send test notification** sends a test message with the values in the form, saved or not, with the priority
 of **Job failed**, and shows the service's error when it fails. For a saved provider, blank secret fields use
-the saved values.
+the saved values, on the saved server only.
 
 ## Delivery and retries
 
