@@ -22,7 +22,8 @@ major version. The **Agents** page marks agents older than the latest release wi
 ## Docker Compose
 
 The compose files pin the image version. Set the new release on every `image:` line (for example
-`ghcr.io/arkeep-io/arkeep-server:vX.Y.Z`), then:
+`arkeepio/arkeep-server:vX.Y.Z`; older compose files may use the same image from
+`ghcr.io/arkeep-io/arkeep-server`), then:
 
 ```bash
 docker compose pull
