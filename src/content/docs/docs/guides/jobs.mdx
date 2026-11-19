@@ -18,6 +18,11 @@ Every action an agent performs is a job: a **backup**, a **restore**, a **retent
 | **Cancelled** | An admin cancelled it. |
 | **Interrupted** | The agent disconnected while the job was running. |
 
+A backup in which restic created the snapshot but could not read some files (a file the agent is not
+allowed to read, a file locked on Windows) is **Failed**, so that someone looks at it, but its snapshot is
+kept: it appears in the snapshot list and can be restored. The destination's error names the files that
+were skipped.
+
 ### Interrupted jobs
 
 When a policy has **Resume interrupted backups** on (the default), an interrupted backup runs again as soon

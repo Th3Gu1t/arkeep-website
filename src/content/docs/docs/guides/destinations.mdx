@@ -154,8 +154,8 @@ destination wait for it (see [Jobs](/docs/guides/jobs/#statuses)).
 ## When the repository is missing
 
 The first backup to a destination creates its restic repository. From the moment anything succeeds on
-it (a backup, a retention sweep, an integrity check, an import or a snapshot sync), Arkeep never creates
-it again: if the repository is gone, backups to the destination fail with *repository not found* and send
+it (a backup, a retention sweep, an integrity check, an import or a snapshot sync), or a backup creates a
+snapshot even though it could not read some files, Arkeep never creates it again: if the repository is gone, backups to the destination fail with *repository not found* and send
 the usual failure notification. This protects against writing into the wrong place, for example an
 unmounted USB disk or NFS share, where a new empty repository would otherwise be created in the bare
 mount point and the backups would go to the system disk instead.
