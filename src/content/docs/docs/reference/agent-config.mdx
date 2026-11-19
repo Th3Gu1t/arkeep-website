@@ -21,12 +21,13 @@ Every option can be set with a flag or an environment variable. When both are se
 ## Enrollment
 
 On first start the agent generates its private key, sends a certificate request to
-`<server-http-addr>/api/v1/agents/enroll` with the agent secret, and stores the CA certificate and its
-client certificate in `--state-dir`. Later starts reuse them. Delete them to enroll again (an admin may then
-need to [reset the agent's identity](/docs/guides/agents/#reset-identity)).
+`<server-http-addr>/api/v1/agents/enroll` with a proof of the agent secret, and stores the CA certificate
+and its client certificate in `--state-dir`. Later starts reuse them. Delete them to enroll again (an admin
+may then need to [reset the agent's identity](/docs/guides/agents/#reset-identity)).
 
-Over plain HTTP the agent secret travels in clear and the CA certificate cannot be authenticated. Prefer an
-`https://` enrollment address whenever the server is reachable over HTTPS.
+The secret itself is never sent, and the agent accepts the server's answer only with the server's proof of
+the same secret, so plain HTTP is safe for enrollment. An agent refuses a server older than itself and logs
+*the answer does not prove that the server knows the agent secret*: upgrade the server first.
 
 ## Embedded tools
 

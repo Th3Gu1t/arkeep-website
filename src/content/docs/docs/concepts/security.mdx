@@ -6,14 +6,16 @@ description: How Arkeep authenticates agents and users, protects credentials and
 ## Agents
 
 Agents authenticate to the server with **mutual TLS**. On first startup the server creates a private
-certificate authority in its data directory. A new agent enrolls once over HTTP, presenting the shared
+certificate authority in its data directory. A new agent enrolls once over HTTP with a proof of the shared
 `ARKEEP_AGENT_SECRET`: it sends a certificate request, the server signs it and the agent keeps the
-certificate in its state directory.
+certificate in its state directory. The secret itself never travels, and the agent accepts the CA and
+certificate only with the server's proof of the same secret, so someone on the network cannot take the
+secret or hand the agent a CA of their own, even over plain HTTP. Keep the secret long and random.
 
 - The server refuses to start without `ARKEEP_AGENT_SECRET`, and enrollment fails closed when it is empty.
 - Each agent is bound to the fingerprint of its certificate on first registration. Another certificate
   presenting the same agent is refused until an admin uses **Reset identity** (see [Agents](/docs/guides/agents/#reset-identity)).
-- Enrollment is rate limited to 10 requests per minute per IP.
+- Enrollment is rate limited to 10 requests per minute per client address (per /64 for IPv6).
 
 Keep the server's data directory secure: it holds the CA private key.
 
@@ -51,8 +53,8 @@ root unless you need full-system backups.
 
 ## Credentials at rest
 
-Repository passwords, S3 keys, SFTP passwords, OIDC client secrets, the SMTP password and the webhook
-secret are encrypted at rest with AES-256-GCM using `ARKEEP_SECRET_KEY`. They are write-only: the API
+Repository passwords, S3 keys, SFTP passwords, OIDC client secrets, the SMTP password, the webhook
+secret and the secrets of notification providers (tokens, passwords, topics, webhook URLs) are encrypted at rest with AES-256-GCM using `ARKEEP_SECRET_KEY`. They are write-only: the API
 never returns them.
 
 **What this protects against:** someone who obtains the database alone, such as a dump, a copy of the
@@ -104,13 +106,18 @@ Public endpoints are rate limited per client IP (read from `X-Forwarded-For` onl
 [trusted proxies](/docs/installation/reverse-proxy-tls/#the-web-interface-over-https)), per minute: 5 for
 login and the password reset request and confirmation together, 30 for token refresh, 10 each for the
 2FA step and the required password change, 20 for logout and 5 for the first-admin setup. Sending a test
-email or test webhook is limited to 5 per minute.
+email, test webhook or test notification is limited to 5 per minute. An IPv6 client is counted per /64,
+the block a single client usually holds, so it cannot get a new budget by changing address; an IPv4
+client is counted per address.
 
 ## Two-factor authentication
 
 TOTP secrets are encrypted at rest like other credentials, and recovery codes are stored hashed. A
 login challenge expires after 5 minutes and allows at most 5 wrong codes before the password step
-starts over. See [Users, roles and 2FA](/docs/guides/users-and-2fa/).
+starts over. Codes are also counted per account, from any address and across challenges: after 10 codes
+within 15 minutes, the code step of that account is refused until the 15 minutes are over. Only someone
+who knows the password reaches that step, so nobody can use it to lock you out with your email alone;
+wrong passwords are limited per address only. See [Users, roles and 2FA](/docs/guides/users-and-2fa/).
 
 ## Initial setup
 

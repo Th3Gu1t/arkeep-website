@@ -1,7 +1,117 @@
 ---
 title: Run the agent with systemd
-description: Install the Arkeep agent as a systemd service, including on ARM and MIPS boards.
+description: Install the Arkeep agent as a systemd service, from a .deb or .rpm package or by hand, including on ARM and MIPS boards.
 ---
+
+On Linux, the agent runs as a systemd service. On Debian, Ubuntu, Fedora, RHEL and their derivatives,
+install the package from the Arkeep repository: it sets up the service for you, and the agent then
+upgrades with the rest of the system. On other distributions, or to manage the binary yourself,
+[install it by hand](#install-by-hand).
+
+## Install from the package repository
+
+The repository at `https://pkg.arkeep.io` serves the agent for `amd64`, `arm64` and `armhf` (armv7, for
+example a Raspberry Pi running a 32-bit system), signed with the Arkeep package key. It holds the last
+three stable releases.
+
+The fingerprint of the Arkeep package key, `Arkeep packages <hello@arkeep.io>`, is:
+
+```text
+76DB 37AC 972E 9076 379C  7984 873A 0E6A 1330 6921
+```
+
+Check it against the key you download (`gpg --show-keys /etc/apt/keyrings/arkeep.asc`), and against the
+one `dnf` shows when it asks you to accept the key.
+
+Debian and Ubuntu:
+
+```bash
+sudo install -d -m 0755 /etc/apt/keyrings
+curl -fsSL https://pkg.arkeep.io/gpg.key | sudo tee /etc/apt/keyrings/arkeep.asc > /dev/null
+echo "deb [signed-by=/etc/apt/keyrings/arkeep.asc] https://pkg.arkeep.io/apt stable main" \
+  | sudo tee /etc/apt/sources.list.d/arkeep.list
+sudo apt update
+sudo apt install arkeep-agent
+```
+
+Fedora, RHEL and derivatives (`dnf` asks you to accept the Arkeep key on the first install):
+
+```bash
+sudo curl -fsSL -o /etc/yum.repos.d/arkeep.repo https://pkg.arkeep.io/rpm/arkeep.repo
+sudo dnf install arkeep-agent
+```
+
+The APT index is valid for 30 days and the repository is rebuilt every week, so that a stale copy cannot
+be served for longer than that. If `apt update` reports that the `Release` file of `pkg.arkeep.io` is
+expired, the repository has not been published lately: [open an issue](https://github.com/arkeep-io/arkeep/issues)
+rather than turning off the check (`Check-Valid-Until=false`).
+
+Then [configure and start the agent](#configure-and-start).
+
+## Install a downloaded package
+
+Without the repository, download the package of a release and install it. Packages are attached to
+every release for `amd64`, `arm64` and `arm`. Pick the file for your architecture (`uname -m` prints
+`x86_64`, `aarch64` or `armv7l`).
+
+Debian and Ubuntu:
+
+```bash
+curl -LO https://github.com/arkeep-io/arkeep/releases/latest/download/arkeep-agent_linux_amd64.deb
+sudo apt install ./arkeep-agent_linux_amd64.deb
+```
+
+Fedora, RHEL and derivatives:
+
+```bash
+curl -LO https://github.com/arkeep-io/arkeep/releases/latest/download/arkeep-agent_linux_amd64.rpm
+sudo dnf install ./arkeep-agent_linux_amd64.rpm
+```
+
+Upgrades then mean downloading the package of each new release the same way.
+
+## Configure and start
+
+The package installs the agent in `/usr/bin`, the systemd service, and a configuration file,
+`/etc/arkeep/agent.env`, readable by root only. The service is enabled but not started: fill in the
+server address and the agent secret first, then start it.
+
+```bash
+sudoedit /etc/arkeep/agent.env
+#   ARKEEP_SERVER_ADDR=your-server:9090
+#   ARKEEP_AGENT_SECRET=your-agent-secret
+
+sudo systemctl start arkeep-agent
+sudo journalctl -u arkeep-agent -f
+```
+
+The agent reports `enrollment successful`, then `registered with server`, and appears on the
+**Agents** page. Behind a reverse proxy, also set `ARKEEP_SERVER_HTTP_ADDR` in the same file: see
+[Agent configuration](/docs/reference/agent-config/).
+
+With the repository, the agent [upgrades](/docs/installation/upgrading/#agent-packages) with
+`apt upgrade` or `dnf upgrade`. Your `agent.env` is kept and a running service is restarted.
+
+To remove the agent, run `sudo apt remove arkeep-agent` or `sudo dnf remove arkeep-agent`. Its
+configuration and its state in `/var/lib/arkeep-agent` stay on the machine: installing the package again
+brings back the same agent. `sudo apt purge arkeep-agent` deletes them too, and the agent then enrolls as
+a new one. Its snapshots stay in their destinations.
+
+:::note[Coming from a manual install]
+The package uses `/usr/bin/arkeep-agent`, and a unit left in `/etc/systemd/system` by a manual install
+takes precedence over the packaged one. After installing the package, remove the old files:
+
+```bash
+sudo rm /etc/systemd/system/arkeep-agent.service /usr/local/bin/arkeep-agent
+sudo systemctl daemon-reload
+sudo systemctl restart arkeep-agent
+```
+
+Your existing `/etc/arkeep/agent.env` and `/var/lib/arkeep-agent` are kept, so the agent keeps its
+identity.
+:::
+
+## Install by hand
 
 A systemd unit file is provided at
 [`deploy/systemd/arkeep-agent.service`](https://github.com/arkeep-io/arkeep/blob/main/deploy/systemd/arkeep-agent.service).
@@ -30,6 +140,8 @@ sudo systemctl enable --now arkeep-agent
 sudo journalctl -u arkeep-agent -f
 ```
 
+## How the service runs
+
 The agent runs as root. A backup agent has to read every file it backs up, including those only root
 can read (`/etc/shadow`, `/root`, database directories), and to restore files anywhere with their
 original owners and permissions. Hooks and command sources therefore run as root too; only admins can set
@@ -45,7 +157,10 @@ Any other agent setting can go in `/etc/arkeep/agent.env`, for example `ARKEEP_L
 
 In addition to `linux_amd64` and `linux_arm64`, the agent is also published for `linux_arm`
 (armv7, for example Raspberry Pi and similar single-board computers), `linux_mips`, and `linux_mipsle`.
-This is useful for backing up embedded systems such as DVB-S2 satellite receivers.
+This is useful for backing up embedded systems such as DVB-S2 satellite receivers. On armv7 boards
+running Debian, Raspberry Pi OS or Fedora, [install the package](#install-from-the-package-repository).
+MIPS devices have no package: download the binary and
+[install it by hand](#install-by-hand).
 
 ```bash
 # armv7

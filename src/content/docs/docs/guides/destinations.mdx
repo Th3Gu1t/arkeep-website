@@ -97,10 +97,18 @@ Rclone destinations take no credentials in Arkeep: configure the remote, with it
 `rclone.conf` on each agent that writes to it. The remote name accepts letters, digits, `_ . + @`,
 spaces and dashes; it cannot be an rclone connection string.
 
+Where the agent reads `rclone.conf`:
+
+- **systemd:** `/root/.config/rclone/rclone.conf` (see [Agent with systemd](/docs/installation/agent-systemd/)).
+- **Docker:** `/etc/arkeep/rclone/rclone.conf` inside the container: mount the host folder there (see
+  [Rclone destinations in Docker](/docs/installation/docker-compose/#rclone-destinations-in-docker)).
+
 ## Credentials
 
 Credentials are encrypted at rest and never shown again after saving. When you edit a destination, leave
-the credential fields blank to keep the current ones.
+the credential fields blank to keep the current ones. They are kept only for the same server: if you change
+the S3 endpoint, the SFTP host or port, or the host of a REST URL, enter the credentials again, so that saved
+credentials are never sent to another server. Changing the bucket, prefix or folder does not ask for them.
 
 ## Common fields
 
@@ -148,8 +156,8 @@ destination wait for it (see [Jobs](/docs/guides/jobs/#statuses)).
 ## When the repository is missing
 
 The first backup to a destination creates its restic repository. From the moment anything succeeds on
-it (a backup, a retention sweep, an integrity check, an import or a snapshot sync), Arkeep never creates
-it again: if the repository is gone, backups to the destination fail with *repository not found* and send
+it (a backup, a retention sweep, an integrity check, an import or a snapshot sync), or a backup creates a
+snapshot even though it could not read some files, Arkeep never creates it again: if the repository is gone, backups to the destination fail with *repository not found* and send
 the usual failure notification. This protects against writing into the wrong place, for example an
 unmounted USB disk or NFS share, where a new empty repository would otherwise be created in the bare
 mount point and the backups would go to the system disk instead.

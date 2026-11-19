@@ -52,9 +52,10 @@ arkeep-agent --server-addr arkeep.example.com:9090 \
 
 The enrollment address is used once; afterwards the certificates in `--state-dir` are reused.
 
-:::caution
-Over plain HTTP the agent secret travels in clear during enrollment and the CA certificate cannot be
-authenticated. Prefer an `https://` enrollment address whenever the server is reachable over HTTPS.
+:::note
+Plain HTTP is safe for enrollment: the agent proves it knows the agent secret without sending it, and
+accepts the CA and certificate only with the server's proof of the same secret. Agents refuse a server
+older than themselves, so upgrade the server before its agents.
 :::
 
 ### Your own certificate

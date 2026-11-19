@@ -1,10 +1,11 @@
 ---
 title: Notifications
-description: Email, webhook and in-app notifications, the events that trigger them, signature verification and ready-made integrations.
+description: Email, webhook, push and chat (Gotify, ntfy, Telegram, Discord…) and in-app notifications, the events that trigger them, priorities, signature verification and ready-made integrations.
 ---
 
-Arkeep notifies you when jobs finish and when agents go offline or come back, by **email**, **webhook** and
-**in-app** notification.
+Arkeep notifies you when jobs finish and when agents go offline or come back, by **email**, **webhook**,
+**notification providers** (push and chat services such as Gotify, ntfy, Telegram or Discord) and **in-app**
+notification.
 
 ## Events
 
@@ -24,18 +25,20 @@ or time out in the queue are reported as failed jobs.
 Each policy can override the two job events with **On success** and **On failure**: **Use global setting**,
 **Always** or **Never**. See [Policies](/docs/guides/policies/#notifications).
 
-These toggles and overrides decide what is sent by email and webhook.
+These toggles and overrides decide what is sent by email, webhook and notification providers.
 
 ## Channels
 
-Email and webhook are independent: use either, both or neither. In **Settings → Notifications**:
+Email, webhook and notification providers are independent: use any combination. In **Settings → Notifications**:
 
 - **Send email notifications** (on by default) emails every enabled event. Turn it off to keep only the
   webhook: no email is attempted and no SMTP error is logged. Password reset emails are still sent.
 - **Send webhook notifications** (off by default) posts every enabled event to your endpoint. See
   [Webhook](#webhook).
+- **Notification providers** each receive every enabled event, and can be turned on and off one by one.
+  See [Notification providers](#notification-providers).
 
-A channel turned off also drops its deliveries still waiting for a retry, so turning it back on never sends
+A channel or provider turned off (or a provider deleted) also drops its deliveries still waiting for a retry, so turning it back on never sends
 old notifications. In-app notifications are always created.
 
 ## Email
@@ -47,7 +50,7 @@ Set up the mail server in **Settings → SMTP**:
 | **Host** | Required |
 | **Port** | For example 587 |
 | **Implicit TLS** | On for SMTPS on port 465; off for STARTTLS (587) or plaintext |
-| **Authentication** | Turn on to enter **Username** and **Password**. Leave the password blank to keep the current one. |
+| **Authentication** | Turn on to enter **Username** and **Password**. Leave the password blank to keep the current one, unless you change the host: a new host needs the password again. |
 | **From Address** | Required |
 | **From Name** | `Arkeep` by default |
 | **Notification Recipients** | Addresses to notify. When empty, every active admin is notified. Not used when **Send email notifications** is off. |
@@ -115,9 +118,59 @@ function verifyArkeepSignature(body, secret, header) {
 }
 ```
 
+## Notification providers
+
+Notification providers send events straight to a push or chat service, without a relay. In
+**Settings → Notifications → Notification providers**, click **Add provider**, choose the service and fill
+in what it needs: Arkeep builds the rest. Add as many providers as you like, for example Gotify on your phone
+and a Telegram group for the team.
+
+| Service | What you need |
+|---|---|
+| **Gotify** | Server URL and the token of an application created in Gotify |
+| **ntfy** | Server URL (`https://ntfy.sh` or your own), topic, and an access token if the server or topic requires one |
+| **Pushover** | User key, application API token, and optionally the devices to notify |
+| **Telegram** | Bot token (from [@BotFather](https://t.me/BotFather)) and chat IDs or `@channel` names; the bot must be in the chats |
+| **Discord** | The channel's webhook URL (**Channel Settings → Integrations → Webhooks**) |
+| **Matrix** | Homeserver URL, user, password and optionally the rooms (otherwise every room the user has joined) |
+| **Slack** | The URL of an [incoming webhook](https://api.slack.com/messaging/webhooks) |
+| **Microsoft Teams** | The URL of a Workflows (Power Automate) webhook, *Post to a channel when a webhook request is received* |
+| **Google Chat** | The space's webhook URL (**Apps & integrations → Webhooks**) |
+| **Mattermost** | The URL of an incoming webhook (**Integrations → Incoming Webhooks**) |
+| **Other** | A [shoutrrr](https://github.com/nicholas-fedor/shoutrrr) URL, for any other service shoutrrr supports |
+
+A server URL without a scheme means `https://`; an `http://` URL turns TLS off. For Gotify and ntfy behind a
+reverse proxy, include the base path (`https://example.com/gotify`).
+
+Tokens, passwords, topics and webhook URLs are encrypted at rest and never shown again: when you edit a
+provider, leave them blank to keep the current values. For Gotify, ntfy and Matrix they are kept only while
+the server in **URL** stays the same: pointing it at another host needs them again, so that saved secrets
+are never sent to another server. To drop the optional ntfy access token, click
+**Remove the saved access token**.
+
+### Priority per event
+
+Gotify, ntfy and Pushover take a priority, set per event on each provider. Leave it empty for the service
+default.
+
+| Service | Values | Example: silent success, loud failure |
+|---|---|---|
+| **Gotify** | `0` to `10`. `0` shows no notification on Android, `8` and above pop up with sound and vibration | success `0`, failure `8` |
+| **ntfy** | `1` (min) to `5` (max), or `min`, `low`, `default`, `high`, `max` | success `min`, failure `max` |
+| **Pushover** | `-2` (no alert) to `1` (high); `2` (emergency) repeats until acknowledged | success `-2`, failure `1` |
+
+Arkeep checks the values when you save, so a typo is reported at once rather than at the next failed backup.
+The **Other** type accepts a priority only for services that have one.
+
+### Testing
+
+**Send test notification** sends a test message with the values in the form, saved or not, with the priority
+of **Job failed**, and shows the service's error when it fails. For a saved provider, blank secret fields use
+the saved values, on the saved server only.
+
 ## Delivery and retries
 
-Email and webhook deliveries are retried up to three times: immediately, after 5 minutes and after 30 minutes.
+Email, webhook and notification provider deliveries are retried up to three times: immediately, after 5 minutes and after 30 minutes.
 
 ## In-app notifications
 
@@ -127,6 +180,10 @@ Click one to mark it read, or **Mark all as read**. In-app notifications are alw
 event toggles say. Read notifications are deleted 30 days after they were read; unread ones are kept.
 
 ## Integrations
+
+Slack, Discord, Telegram and the other services under [Notification providers](#notification-providers) are
+simpler to set up as providers. The recipes below use the generic webhook, for integrations that need its
+JSON payload.
 
 ### Slack
 

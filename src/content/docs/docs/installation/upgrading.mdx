@@ -1,6 +1,6 @@
 ---
 title: Upgrading
-description: Upgrade the server and agents safely, for Docker Compose, binaries and Helm.
+description: Upgrade the server and agents safely, for Docker Compose, binaries, packages, Helm and Home Assistant.
 ---
 
 :::caution
@@ -22,7 +22,8 @@ major version. The **Agents** page marks agents older than the latest release wi
 ## Docker Compose
 
 The compose files pin the image version. Set the new release on every `image:` line (for example
-`ghcr.io/arkeep-io/arkeep-server:vX.Y.Z`), then:
+`arkeepio/arkeep-server:vX.Y.Z`; older compose files may use the same image from
+`ghcr.io/arkeep-io/arkeep-server`), then:
 
 ```bash
 docker compose pull
@@ -46,6 +47,39 @@ sudo systemctl start arkeep-server
 sudo journalctl -u arkeep-server -f
 ```
 
+## Agent packages
+
+With the [package repository](/docs/installation/agent-systemd/#install-from-the-package-repository), the
+agent upgrades with the rest of the system:
+
+```bash
+sudo apt update && sudo apt upgrade     # Debian, Ubuntu
+sudo dnf upgrade                        # Fedora, RHEL
+```
+
+`/etc/arkeep/agent.env` is kept and a running agent is restarted on the new version. A service you
+disabled stays disabled.
+
+To let the machine upgrade the agent on its own, use the automatic updates of the distribution.
+`dnf-automatic` covers every configured repository. `unattended-upgrades` covers only the origins it is
+told about, so add the Arkeep repository to them:
+
+```bash
+echo 'Unattended-Upgrade::Origins-Pattern { "origin=Arkeep,codename=stable"; };' \
+  | sudo tee /etc/apt/apt.conf.d/51arkeep-unattended-upgrades
+```
+
+A [downloaded package](/docs/installation/agent-systemd/#install-a-downloaded-package) upgrades by
+installing the package of the new release over the installed one:
+
+```bash
+curl -LO https://github.com/arkeep-io/arkeep/releases/latest/download/arkeep-agent_linux_amd64.deb
+sudo apt install ./arkeep-agent_linux_amd64.deb
+# or, on Fedora and RHEL:
+curl -LO https://github.com/arkeep-io/arkeep/releases/latest/download/arkeep-agent_linux_amd64.rpm
+sudo dnf install ./arkeep-agent_linux_amd64.rpm
+```
+
 ## Helm
 
 Upgrade to the chart of the new release (its version is the release without the `v`):
@@ -54,6 +88,11 @@ Upgrade to the chart of the new release (its version is the release without the 
 helm upgrade arkeep oci://ghcr.io/arkeep-io/charts/arkeep --version X.Y.Z --reuse-values
 kubectl rollout status deployment/arkeep
 ```
+
+## Home Assistant app
+
+Home Assistant offers each stable release of the [agent app](/docs/installation/home-assistant/) as an
+update. Install it from **Settings** > **Apps**, or turn on automatic updates for the app.
 
 ## Update notifications
 

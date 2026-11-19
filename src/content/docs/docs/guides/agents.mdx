@@ -5,13 +5,15 @@ description: How agents join, what the Agents pages show, and how to rename, del
 
 An agent runs on every machine you back up. It connects out to the server and runs restic and rclone
 locally. Install it with [Docker Compose](/docs/installation/docker-compose/#agent-only), as a
-[standalone binary](/docs/installation/binary/#agent) or as a [systemd service](/docs/installation/agent-systemd/).
+[standalone binary](/docs/installation/binary/#agent), as a [systemd service](/docs/installation/agent-systemd/)
+from a `.deb` or `.rpm` package, or as a [Home Assistant app](/docs/installation/home-assistant/).
 
 ## How an agent joins
 
 There is no approval step. On first start the agent:
 
-1. enrolls over HTTP with the shared `ARKEEP_AGENT_SECRET` and receives a client certificate;
+1. enrolls over HTTP with a proof of the shared `ARKEEP_AGENT_SECRET` (never the secret itself) and
+   receives a client certificate;
 2. opens its gRPC connection and registers.
 
 The agent then appears on the **Agents** page, named after the machine's hostname, and turns

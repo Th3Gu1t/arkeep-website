@@ -77,6 +77,12 @@ Environment=ARKEEP_GRPC_TLS_KEY=%d/grpc.key
 
 ## Agent
 
+:::tip
+On Debian, Ubuntu, Fedora and RHEL, install the agent from the
+[package repository](/docs/installation/agent-systemd/#install-from-the-package-repository): it runs as
+a systemd service and upgrades with the rest of the system.
+:::
+
 ```bash
 curl -L https://github.com/arkeep-io/arkeep/releases/latest/download/arkeep-agent_linux_amd64.tar.gz | tar xz
 
