@@ -41,6 +41,11 @@ sudo curl -fsSL -o /etc/yum.repos.d/arkeep.repo https://pkg.arkeep.io/rpm/arkeep
 sudo dnf install arkeep-agent
 ```
 
+The APT index is valid for 30 days and the repository is rebuilt every week, so that a stale copy cannot
+be served for longer than that. If `apt update` reports that the `Release` file of `pkg.arkeep.io` is
+expired, the repository has not been published lately: [open an issue](https://github.com/arkeep-io/arkeep/issues)
+rather than turning off the check (`Check-Valid-Until=false`).
+
 Then [configure and start the agent](#configure-and-start).
 
 ## Install a downloaded package
