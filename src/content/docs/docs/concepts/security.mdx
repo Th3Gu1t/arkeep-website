@@ -6,9 +6,11 @@ description: How Arkeep authenticates agents and users, protects credentials and
 ## Agents
 
 Agents authenticate to the server with **mutual TLS**. On first startup the server creates a private
-certificate authority in its data directory. A new agent enrolls once over HTTP, presenting the shared
+certificate authority in its data directory. A new agent enrolls once over HTTP with a proof of the shared
 `ARKEEP_AGENT_SECRET`: it sends a certificate request, the server signs it and the agent keeps the
-certificate in its state directory.
+certificate in its state directory. The secret itself never travels, and the agent accepts the CA and
+certificate only with the server's proof of the same secret, so someone on the network cannot take the
+secret or hand the agent a CA of their own, even over plain HTTP. Keep the secret long and random.
 
 - The server refuses to start without `ARKEEP_AGENT_SECRET`, and enrollment fails closed when it is empty.
 - Each agent is bound to the fingerprint of its certificate on first registration. Another certificate
