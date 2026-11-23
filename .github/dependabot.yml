@@ -11,6 +11,10 @@ updates:
     groups:
       npm:
         patterns: ["*"]
+    # Pinned by the override in pnpm-workspace.yaml until Starlight moves to
+    # satteri 0.11: 0.4.7+ breaks the build.
+    ignore:
+      - dependency-name: "@astrojs/markdown-satteri"
 
   - package-ecosystem: github-actions
     directory: /
